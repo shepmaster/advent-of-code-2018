@@ -31,14 +31,20 @@ fn main() -> Result<()> {
 
     let mut cloth = BTreeMap::new();
 
-    for claim in &claims {
-        for coord in claim.squares() {
-            *cloth.entry(coord).or_insert(0) += 1;
-        }
+    for coord in claims.iter().flat_map(|claim| claim.squares()) {
+        *cloth.entry(coord).or_insert(0) += 1;
     }
 
     let contested = cloth.iter().filter(|(_, &count)| count >= 2).count();
     println!("There are {} contested squares", contested);
+
+    let uncontested = claims.iter().filter(|claim| {
+        claim.squares().all(|coord| cloth.get(&coord) == Some(&1))
+    });
+
+    for claim in uncontested {
+        println!("{:?} is uncontested", claim);
+    }
 
     Ok(())
 }
