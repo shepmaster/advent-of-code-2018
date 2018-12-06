@@ -97,6 +97,26 @@ fn main() -> Result<()> {
         );
     }
 
+    let sleepiest_guard = time
+        .iter()
+        .max_by_key(|(_, x)| x.values().max().unwrap_or(&0))
+        .map(|(id, _)| id);
+
+    if let Some(sleepiest_guard) = sleepiest_guard {
+        let sleepiest_minute = time[&sleepiest_guard]
+            .iter()
+            .max_by_key(|(_, &count)| count)
+            .map(|(minute, _)| minute)
+            .expect("Must be some time they are asleep");
+
+        println!(
+            "The sleepiest guard is {} at {} ({})",
+            sleepiest_guard,
+            sleepiest_minute,
+            sleepiest_guard * sleepiest_minute
+        );
+    }
+
     Ok(())
 }
 
