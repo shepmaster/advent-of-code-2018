@@ -1,17 +1,34 @@
+use std::collections::{BTreeMap, BTreeSet};
+
 static INPUT: &str = include_str!("../input.txt");
 
 fn main() {
-    let mut polymer: Vec<_> = INPUT.trim().chars().collect();
+    let polymer: Vec<_> = INPUT.trim().chars().collect();
 
+    let units: BTreeSet<_> = polymer.iter().map(char::to_ascii_uppercase).collect();
+
+    let all_reactions: BTreeMap<_, _> = units.iter().map(|&c| (c, complete_react(remove_unit(&polymer, c)))).collect();
+
+    let min_length = all_reactions.values().map(|r| r.len()).min();
+
+    println!("Resulting polymer is {:?} units", min_length);
+}
+
+fn remove_unit(polymer: &[char], unit: char) -> Vec<char> {
+    let mut polymer = polymer.to_owned();
+    polymer.retain(|c| !c.eq_ignore_ascii_case(&unit));
+    polymer
+}
+
+fn complete_react(mut polymer: Vec<char>) -> Vec<char> {
     loop {
         let start_len = polymer.len();
         polymer = react(polymer);
-        if polymer.len() == start_len { break }
+        if polymer.len() == start_len {
+            return polymer;
+        }
     }
-
-    println!("Resulting polymer is {} units", polymer.len());
 }
-
 
 fn react(polymer: Vec<char>) -> Vec<char> {
     let mut i = 0;
