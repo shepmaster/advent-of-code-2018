@@ -69,12 +69,18 @@ fn main() -> Result<()> {
         println!("Coordinate {:?} has an area of {}", coord, count);
     }
 
+    let within_10000 = bounds.wide_coords().filter(|&coord| {
+        coords.iter().map(|&c| distance(c, coord)).sum::<i32>() < 10_000
+    }).count();
+
+    println!("There are {} coordinates with a total of 10,000 distance", within_10000);
+
     Ok(())
 }
 
-type Coord = (u16, u16);
+type Coord = (i32, i32);
 
-fn distance(a: Coord, b: Coord) -> u16 {
+fn distance(a: Coord, b: Coord) -> i32 {
     let [x0, x1] = { let mut t = [a.0, b.0]; t.sort(); t };
     let [y0, y1] = { let mut t = [a.1, b.1]; t.sort(); t };
     x1 - x0 + y1 - y0
@@ -82,10 +88,10 @@ fn distance(a: Coord, b: Coord) -> u16 {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 struct Bounds {
-    min_x: u16,
-    max_x: u16,
-    min_y: u16,
-    max_y: u16,
+    min_x: i32,
+    max_x: i32,
+    min_y: i32,
+    max_y: i32,
 }
 
 impl Bounds {
@@ -123,6 +129,16 @@ impl Bounds {
         let rgt = (min_y..max_y).map(move |y| (max_x, y));
 
         top.chain(bot).chain(lft).chain(rgt)
+    }
+
+    fn wide_coords(&self) -> impl Iterator<Item = Coord> {
+        let Bounds { mut min_x, mut max_x, mut min_y, mut max_y } = *self;
+        min_x -= 10_000;
+        min_y -= 10_000;
+        max_x += 10_000;
+        max_y += 10_000;
+
+        (min_x..max_x).cartesian_product(min_y..max_y)
     }
 }
 
