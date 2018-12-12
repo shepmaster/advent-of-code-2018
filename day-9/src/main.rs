@@ -1,4 +1,5 @@
 use regex::Regex;
+use std::collections::VecDeque;
 
 static INPUT: &str = include_str!("../input.txt");
 
@@ -6,8 +7,11 @@ type Error = Box<dyn std::error::Error>;
 type Result<T, E = Error> = std::result::Result<T, E>;
 
 fn main() -> Result<()> {
-    let config = config()?;
+    let mut config = config()?;
 
+    println!("{}", config.run_game());
+
+    config.points *= 100;
     println!("{}", config.run_game());
 
     Ok(())
@@ -22,12 +26,18 @@ struct Config {
 impl Config {
     fn run_game(&self) -> usize {
         let mut scores = vec![0; self.players];
-        let mut board = vec![0];
+        let mut board: VecDeque<_> = vec![0].into();
         let mut current_player = 0;
         let mut current_idx: usize = 0;
         let mut current_marble = 1;
 
+        let five_percent = self.points / 20;
+
         while current_marble <= self.points {
+            if current_marble % five_percent == 0 {
+                println!("{}%...", current_marble * 100/ self.points);
+            }
+
             // print!("{}> {:3} | ", current_player + 1, current_idx);
             // for x in &board {
             //     print!("{:3} ", x);
@@ -36,7 +46,7 @@ impl Config {
 
             if current_marble % 23 == 0 {
                 let remove_idx = (current_idx).checked_sub(7).unwrap_or(current_idx + board.len() - 7);
-                let previous_marble = board.remove(remove_idx);
+                let previous_marble = board.remove(remove_idx).expect("No previous marble");
 
                 scores[current_player] += current_marble + previous_marble;
 
