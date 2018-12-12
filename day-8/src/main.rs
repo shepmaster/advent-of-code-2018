@@ -11,6 +11,7 @@ fn main() -> Result<()> {
     let root = Node::new(raw_data)?;
 
     println!("Metadata sum is {}", root.metadata_sum());
+    println!("Root value is {}", root.value());
 
     Ok(())
 }
@@ -40,6 +41,19 @@ impl Node {
         let direct = self.metadata.iter().sum::<usize>();
 
         children + direct
+    }
+
+    fn value(&self) -> usize {
+        if self.children.is_empty() {
+            self.metadata.iter().sum::<usize>()
+        } else {
+            self.metadata.iter().flat_map(|idx| {
+                match idx {
+                    0 => None,
+                    idx => self.children.get(idx - 1).map(|n| n.value()),
+                }
+            }).sum::<usize>()
+        }
     }
 }
 
