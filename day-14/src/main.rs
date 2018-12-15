@@ -3,10 +3,14 @@ const INPUT: usize = 652601;
 fn main() {
     let mut rb = RecipeBoard::new();
 
-    for d in rb.ten_after(INPUT) {
-        print!("{}", d);
-    }
-    println!();
+    // for d in rb.ten_after(INPUT) {
+    //     print!("{}", d);
+    // }
+    // println!();
+
+    let needle: Vec<_> = digits(INPUT).collect();
+    let index = rb.find(&needle);
+    println!("Found at {}", index);
 }
 
 struct RecipeBoard {
@@ -37,6 +41,23 @@ impl RecipeBoard {
         assert_eq!(self.scores.len(), n_recipes, "Didn't make the right number of recipes");
     }
 
+    fn find(&mut self, needle: &[u8]) -> usize {
+        loop {
+            let x = self.scores.rchunks(needle.len()).next();
+            if x == Some(needle) {
+                return self.scores.len() - needle.len();
+            }
+
+            // In case we added two recipes last time
+            let x = self.scores[..self.scores.len()-1].rchunks(needle.len()).next();
+            if x == Some(needle) {
+                return self.scores.len() - needle.len() - 1;
+            }
+
+            self.step();
+        }
+    }
+
     fn step(&mut self) {
         let e1 = self.scores[self.elf1];
         let e2 = self.scores[self.elf2];
@@ -52,7 +73,7 @@ impl RecipeBoard {
     }
 }
 
-fn digits(number: u8) -> impl Iterator<Item = u8> {
+fn digits(number: impl ToString) -> impl Iterator<Item = u8> {
     let d: Vec<u8> = number.to_string().chars().flat_map(|c| c.to_digit(10)).map(|d| d as u8).collect();
     d.into_iter()
 }
@@ -108,4 +129,28 @@ fn example_3() {
 fn example_4() {
     let mut rb = RecipeBoard::new();
     assert_eq!(rb.ten_after(2018), [5, 9, 4, 1, 4, 2, 9, 8, 8, 2]);
+}
+
+#[test]
+fn example_5() {
+    let mut rb = RecipeBoard::new();
+    assert_eq!(rb.find(&[5, 1, 5, 8, 9]), 9);
+}
+
+#[test]
+fn example_6() {
+    let mut rb = RecipeBoard::new();
+    assert_eq!(rb.find(&[0, 1, 2, 4, 5]), 5);
+}
+
+#[test]
+fn example_7() {
+    let mut rb = RecipeBoard::new();
+    assert_eq!(rb.find(&[9, 2, 5, 1, 0]), 18);
+}
+
+#[test]
+fn example_8() {
+    let mut rb = RecipeBoard::new();
+    assert_eq!(rb.find(&[5, 9, 4, 1, 4]), 2018);
 }
