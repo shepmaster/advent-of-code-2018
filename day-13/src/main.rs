@@ -61,8 +61,6 @@ impl Cart {
             (North, Intersection) |
             (East, Intersection) |
             (West, Intersection) => self.turn_at_intersection(),
-
-            (Crash, _) => unimplemented!("Crash, _"),
         };
 
         Cart { direction, turn }
@@ -85,8 +83,6 @@ impl Cart {
 
             (West, Left) => (South, Straight),
             (West, Right) => (North, Left),
-
-            (Crash, _) => (Crash, self.turn),
         }
     }
 }
@@ -97,7 +93,6 @@ enum Direction {
     South,
     East,
     West,
-    Crash,
 }
 
 impl Direction {
@@ -110,7 +105,6 @@ impl Direction {
             South => (x, y+1),
             East =>  (x+1, y),
             West =>  (x-1, y),
-            Crash => coord,
         }
     }
 }
@@ -132,28 +126,30 @@ struct Game {
 
 impl Game {
     fn run(&mut self) -> Coord {
-        loop {
-            if let Err(coord) = self.step() {
-                return coord;
-            }
+        while self.carts.0.len() > 1 {
+            self.step();
         }
+
+        self.carts.0.keys().next().cloned().expect("No more carts left...")
     }
 
-    fn step(&mut self) -> Result<(), Coord> {
+    fn step(&mut self) {
         let mut old_coords: Vec<_> = self.carts.0.keys().cloned().collect();
         old_coords.reverse();
 
         let mut next_carts = Carts(BTreeMap::new());
 
         while let Some(coord) = old_coords.pop() {
-            let cart = self.carts.0.remove(&coord).expect("Cart wasn't at coordinate");
+            let cart = match self.carts.0.remove(&coord) {
+                Some(c) => c,
+                None => continue, // Removed due to crash
+            };
+
             let next_coord = cart.next_coord(coord);
 
-            if self.carts.at(next_coord).is_some() {
-                return Err(next_coord);
-            }
-            if next_carts.at(next_coord).is_some() {
-                return Err(next_coord);
+            if self.carts.crash(next_coord) || next_carts.crash(next_coord) {
+                // Forget about current cart
+                continue;
             }
 
             let next_track = self.tracks.at(next_coord)
@@ -165,7 +161,6 @@ impl Game {
         }
 
         self.carts = next_carts;
-        Ok(())
     }
 }
 
@@ -198,7 +193,6 @@ impl fmt::Display for Game {
                         East => '>',
                         South => 'v',
                         West => '<',
-                        Crash => 'X',
                     }
                     None => match self.tracks.at(coord) {
                         Some(t) => match t {
@@ -235,6 +229,10 @@ struct Carts(BTreeMap<Coord, Cart>);
 impl Carts {
     fn at(&self, coord: Coord) -> Option<Cart> {
         self.0.get(&coord).cloned()
+    }
+
+    fn crash(&mut self, coord: Coord) -> bool {
+        self.0.remove(&coord).is_some()
     }
 }
 
